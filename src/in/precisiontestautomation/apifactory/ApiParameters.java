@@ -3,11 +3,15 @@ package in.precisiontestautomation.apifactory;
 import in.precisiontestautomation.utils.ApiFrameworkActions;
 import in.precisiontestautomation.utils.ApiKeyInitializers;
 import in.precisiontestautomation.scriptlessautomation.core.exceptionhandling.PrecisionTestException;
+import in.precisiontestautomation.utils.JsonFileReader;
+import io.restassured.path.json.JsonPath;
 import lombok.Getter;
 import lombok.Setter;
 import in.precisiontestautomation.tests.API;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class is designed to handle the parameters required for setting up and executing API requests.
@@ -34,6 +38,7 @@ public class ApiParameters {
     @Getter @Setter private String responseStatusCode;
     @Getter @Setter private List<String> authKeys;
     @Getter @Setter private List<Object> authValues;
+    @Getter @Setter private String schemaJson;
 
     private List<String[]> rows;
 
@@ -117,7 +122,7 @@ public class ApiParameters {
                 case "RESPONSE:EXPECTED_VALUE":
                     ArrayList<Object> expectedValues = new ArrayList<>(Arrays.asList(row));
                     expectedValues.remove(0);
-                    setExpectedValues(setValue("RESPONSE:EXPECTED_VALUE", expectedValues));
+                    setExpectedValues(expectedValues);
                     break;
                 case "RESPONSE:STORE_VALUE":
                     ArrayList<Object> storeValues = new ArrayList<>(Arrays.asList(row));
@@ -131,6 +136,10 @@ public class ApiParameters {
                     break;
                 case "RESPONSE:CODE":
                     setResponseStatusCode(row[1].trim());
+                    break;
+                case "RESPONSE:SCHEMA":
+                    setSchemaJson(jsonString(row[1]));
+
             }
         }
         return ApiRequester.getInstance(this).get();
@@ -205,7 +214,9 @@ public class ApiParameters {
                         } else{
                                 value = values.get(i);
                         }
-                        mergedMap.put(keys.get(i), value);
+                        if(value!=null) {
+                            mergedMap.put(keys.get(i), value);
+                        }
                     }
                 }
             }
@@ -277,11 +288,11 @@ public class ApiParameters {
 
                         String[] values = value.toString().split(":");
 
-                        switch (values[0]) {
-                            case "PreFlow":
+                        switch (values[0].toLowerCase()) {
+                            case "preflow":
                                 newValueList.add(ApiFrameworkActions.fetchPreFlow(value.toString()).trim());
                                 break;
-                            case "ApiGlobalVariables":
+                            case "apiglobalvariables":
                                 newValueList.add(ApiKeyInitializers.getGlobalVariables().get().get(values[1].trim()));
                                 break;
                             default:
@@ -314,16 +325,15 @@ public class ApiParameters {
      */
     public String setValue(String step, String endpoint) {
         try {
-            String apiGlobalVariable = "ApiGlobalVariables:";
-            if (endpoint.contains(apiGlobalVariable)) {
-                String endPointTemp = endpoint.split(apiGlobalVariable)[0].trim();
-                String variable = endpoint.split(apiGlobalVariable)[1].trim();
-                return endPointTemp + ApiKeyInitializers.getGlobalVariables().get().get(variable.trim());
-            }
-            return endpoint.trim();
+            return ApiFrameworkActions.constructString(endpoint);
         } catch (Exception e) {
             throw new PrecisionTestException(step.toUpperCase() + ":Error while reading the value");
         }
+    }
+
+    public String jsonString(String fileName){
+        String filePath = ApiFrameworkActions.searchFiles(fileName,System.getProperty("user.dir")+"/test_data/");
+        return JsonFileReader.getInstance().readJson(filePath).getJsonString();
     }
 }
 

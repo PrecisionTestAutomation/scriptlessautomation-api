@@ -6,7 +6,7 @@
 
     <groupId>in.precisiontestautomation.scriptlessautomation</groupId>
     <artifactId>scriptlessautomation-api</artifactId>
-    <version>1.2</version>
+    <version>1.6</version>
 
     <name>Scriptless Automation</name>
     <description>Scriptless Automation by PrecisionTestAutomation</description>
@@ -14,8 +14,8 @@
 
     <licenses>
         <license>
-            <name>MIT License</name>
-            <url>https://opensource.org/licenses/MIT</url>
+            <name>PrecisionTestAutomation License</name>
+            <url>https://precisiontestautomation.in/open-code-license</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -31,9 +31,9 @@
     </developers>
 
     <scm>
-        <url>https://github.com/PrecisionTestAutomation/ScriptlessAutomation-OpenSource</url>
-        <connection>scm:git:https://github.com/PrecisionTestAutomation/ScriptlessAutomation-OpenSource.git</connection>
-        <developerConnection>scm:git:git@github.com:PrecisionTestAutomation/ScriptlessAutomation-OpenSource.git</developerConnection>
+        <url>https://github.com/PrecisionTestAutomation/scriptlessautomation-api</url>
+        <connection>scm:git:https://github.com/PrecisionTestAutomation/scriptlessautomation-api.git</connection>
+        <developerConnection>scm:git:git@github.com:PrecisionTestAutomation/scriptlessautomation-api.git</developerConnection>
         <tag>testing</tag>
     </scm>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>in.precisiontestautomation.scriptlessautomation</groupId>
             <artifactId>scriptlessautomation-core</artifactId>
-            <version>1.2</version>
+            <version>1.2.3</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
@@ -124,6 +124,13 @@
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>3.6.3</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+
     </dependencies>
 
     <build>
