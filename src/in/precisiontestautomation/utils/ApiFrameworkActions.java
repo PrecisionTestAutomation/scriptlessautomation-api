@@ -15,10 +15,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -306,5 +303,41 @@ public class ApiFrameworkActions {
             e.printStackTrace();
             return null; // Or handle this case as per your requirement
         }
+    }
+
+
+    // Method to replace all occurrences of ApiGlobalVariables:XX in the URL with actual values
+    public static String constructString(String urlTemplate) {
+        // Fetch the global variables map
+        Map<String, Object> globalVariables = ApiKeyInitializers.getGlobalVariables().get();
+
+        // Define the pattern to match ApiGlobalVariables:XX
+        Pattern pattern = Pattern.compile("ApiGlobalVariables:([a-zA-Z0-9]+)");
+        Matcher matcher = pattern.matcher(urlTemplate);
+
+        // Use StringBuffer to hold the modified URL
+        StringBuffer result = new StringBuffer();
+
+        // Iterate through all matches
+        while (matcher.find()) {
+            // Extract the variable name
+            String variableName = matcher.group(1);
+
+            // Get the corresponding value from global variables
+            String value = globalVariables.get(variableName).toString();
+
+            // If the value is found, replace the pattern with the value
+            if (value != null) {
+                matcher.appendReplacement(result, value);
+            } else {
+                // If value is not found, keep the original pattern
+                matcher.appendReplacement(result, matcher.group(0));
+            }
+        }
+
+        // Append the remaining part of the URL
+        matcher.appendTail(result);
+
+        return result.toString();
     }
 }

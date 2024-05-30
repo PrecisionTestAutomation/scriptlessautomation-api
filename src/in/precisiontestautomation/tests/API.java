@@ -97,6 +97,7 @@ public class API extends BaseTest {
                     .parseTestData()
                     .executeTest(testCaseName, CoreKeyInitializers.getCustomSoftAssert().get())
                     .validateResponseCode(CoreKeyInitializers.getCustomSoftAssert().get(), this.validationCondition.get())
+                            .validateResponseSchema(validationCondition)
                     .validateResponse(CoreKeyInitializers.getCustomSoftAssert().get(), this.validationCondition.get())
                     .saveResponseObjects());
         } catch (Exception e) {

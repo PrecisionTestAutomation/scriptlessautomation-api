@@ -2,7 +2,8 @@ package in.precisiontestautomation.apifactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.precisiontestautomation.utils.ApiKeyInitializers;
+import in.precisiontestautomation.scriptlessautomation.core.utils.CoreFrameworkActions;
+import in.precisiontestautomation.utils.*;
 import in.precisiontestautomation.scriptlessautomation.core.exceptionhandling.PrecisionTestException;
 import in.precisiontestautomation.scriptlessautomation.core.utils.AutomationAsserts;
 import io.restassured.RestAssured;
@@ -14,9 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,12 +61,13 @@ public class ApiRequester {
      */
     public ApiRequester executeTest(String testCaseName, AutomationAsserts automationAsserts) {
         automationAsserts.info("TestCase <b>" + testCaseName + "</b> -> <i>Endpoint</i> : " + testParameters.getEndpoint());
-        RequestSpecification request = setAuth(RestAssured.given())
+        Map<String, Object> requestParameters = testParameters.getRequestParameters();
+        RequestSpecification request = setAuth(RestAssured.given(),requestParameters)
                 .baseUri(testParameters.getEndpoint())
                 .log()
                 .all();
 
-        Map<String, Object> requestParameters = testParameters.getRequestParameters();
+
 
         if (!requestParameters.isEmpty()) {
             Map<String, Object> headers = (Map<String, Object>) requestParameters.get("headers");
@@ -94,6 +94,7 @@ public class ApiRequester {
             }
         }
 
+        testParameters.setExpectedValues(testParameters.setValue("RESPONSE:EXPECTED_VALUE", (ArrayList<Object>) testParameters.getExpectedValues()));
         String[] expectedValue = testParameters.getExpectedValues().get(0).toString().split(":");
         testParameters.getExpectedValues().set(0,expectedValue[0]);
         int timeOut;
@@ -134,6 +135,7 @@ public class ApiRequester {
             case "POST" -> request.post();
             case "PUT" -> request.put();
             case "DELETE" -> request.delete();
+            case "PATCH" -> request.patch();
             case "RELAX_GET" -> request.relaxedHTTPSValidation().redirects().follow(true).get();
             case "RELAX_POST" -> request.relaxedHTTPSValidation().redirects().follow(true).post();
             case "RELAX_PUT" -> request.relaxedHTTPSValidation().redirects().follow(true).put();
@@ -170,8 +172,17 @@ public class ApiRequester {
             Map<String, Object> validationPoints = testParameters.mergeListsToMap("ValidationPoints", testParameters.getJsonPath(), testParameters.getExpectedValues());
             validationPoints.entrySet().stream()
                     .filter(f -> !f.getValue().toString().equals("NONE"))
-                    .forEach(f -> automationAsserts.assertEquals(f.getKey(), ApiKeyInitializers.getResponse().get().getBody().jsonPath().getJsonObject(f.getKey()).toString(),
-                            f.getValue().toString()));
+                    .forEach(f -> {
+                        if(!f.getKey().toLowerCase().startsWith("custom")) {
+                            automationAsserts.assertEquals(f.getKey(), ApiKeyInitializers.getResponse().get().getBody().jsonPath().getJsonObject(f.getKey()).toString(),
+                                    f.getValue().toString());
+                        } else {
+                            String[] custom = f.getKey().split(":");
+                            String className = custom[1];
+                            String methodName = custom[2];
+                            ApiFrameworkActions.invokeCustomClassMethods(className,methodName);
+                        }
+                    });
         }
         return this;
     }
@@ -185,9 +196,7 @@ public class ApiRequester {
      */
     public ApiRequester saveResponseObjects() {
         Map<String, String> apiResponseObjects = testParameters.mergeListsToMaps(testParameters.getStoreValue(), testParameters.getJsonPath());
-
         try {
-
             apiResponseObjects.entrySet()
                     .stream()
                     .filter(e -> !e.getKey().equalsIgnoreCase("none") || !e.getKey().isEmpty())
@@ -211,9 +220,9 @@ public class ApiRequester {
      * @return The request with authentication headers set.
      * @author PTA-dev
      */
-    private RequestSpecification setAuth(RequestSpecification request) {
-        if (testParameters.getRequestParameters().containsKey("auth")) {
-            Map<String, Object> auth = (Map<String, Object>) testParameters.getRequestParameters().get("auth");
+    private RequestSpecification setAuth(RequestSpecification request,Map<String, Object> requestParameters) {
+        if (requestParameters.containsKey("auth")) {
+            Map<String, Object> auth = (Map<String, Object>) requestParameters.get("auth");
             if (!auth.isEmpty()) {
                 auth.entrySet().stream()
                         .iterator().forEachRemaining(map -> {
@@ -306,5 +315,56 @@ public class ApiRequester {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public ApiRequester validateResponseSchema(boolean condition){
+        if(condition) {
+            try {
+                String expectedSchemaString = JsonFileReader.getInstance().setJsonString(testParameters.getSchemaJson()).getJsonString();
+                List<String> expectedSchema = JsonPathExtractor.getInstance().getListOfJsonPaths("", expectedSchemaString);
+                List<String> actualSchema = JsonPathExtractor.getInstance().getListOfJsonPaths("", ApiKeyInitializers.getResponse().get().getBody().asString());
+                validateSchema(actualSchema,expectedSchema);
+                return validateSchemaValue(expectedSchemaString);
+            } catch (Exception exception) {
+                System.err.println("Schema validation is not mentioned in the template");
+                return this;
+            }
+        }
+        return this;
+    }
+
+    private void validateSchema(List<String> actual,List<String> expected){
+        ApiKeyInitializers.getCustomSoftAssert().get()
+                .assertEquals("Schema validation",actual,expected);
+    }
+
+    private ApiRequester validateSchemaValue(String expectedSchemaJson){
+        JsonFileReader actualJsonFileReader = JsonFileReader.getInstance().setJsonString(ApiKeyInitializers.getResponse().get().getBody().asString());
+        Map<String,Object> expectedSchemaMap = JsonPathExtractor.getInstance().getMapJsonPathValue("",expectedSchemaJson);
+        Set<Map.Entry<String,Object>> entryMap = expectedSchemaMap.entrySet();
+        for(Map.Entry<String,Object> map : entryMap){
+            String jsonPath = map.getKey();
+            Object actualValue = actualJsonFileReader.getJsonValueByPath(addQuotesIfContainsSpace(jsonPath));
+            actualValue = Objects.isNull(actualValue) ? "null" : actualValue;
+            Object expectedValue = expectedSchemaMap.get(jsonPath);
+            if(String.valueOf(expectedValue).startsWith("@")){
+                SchemaTypeValidations.schemaTypeValidation(jsonPath,String.valueOf(expectedValue).substring(1),actualValue);
+            } else {
+                if(expectedValue.toString().toLowerCase().startsWith("apiglobalvariables")){
+                    expectedValue = ApiKeyInitializers.getGlobalVariables().get().get(expectedValue.toString().split(":")[1]);
+                }
+                ApiKeyInitializers.getCustomSoftAssert().get()
+                        .assertEquals(jsonPath,actualValue,expectedValue);
+            }
+        }
+
+        return this;
+    }
+
+    private String addQuotesIfContainsSpace(String input) {
+        if (input.contains(" ")) {
+            return "'" + input + "'";
+        }
+        return input;
     }
 }
