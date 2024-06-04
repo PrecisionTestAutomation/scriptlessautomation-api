@@ -47,7 +47,7 @@
         <dependency>
             <groupId>in.precisiontestautomation.scriptlessautomation</groupId>
             <artifactId>scriptlessautomation-core</artifactId>
-            <version>1.2.5</version>
+            <version>LATEST</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
