@@ -154,7 +154,7 @@ public class ApiRequester {
      */
     public ApiRequester validateResponseCode(AutomationAsserts automationAsserts, Boolean condition) {
         if (condition) {
-            automationAsserts.assertEquals("Response Code", String.valueOf(ApiKeyInitializers.getResponse().get().statusCode()), testParameters.getResponseStatusCode());
+            automationAsserts.assertEquals("Response Code", String.valueOf(ApiKeyInitializers.getResponse().get().statusCode()), testParameters.getResponseStatusCode(),false,null);
         }
         return this;
     }
@@ -175,7 +175,7 @@ public class ApiRequester {
                     .forEach(f -> {
                         if(!f.getKey().toLowerCase().startsWith("custom")) {
                             automationAsserts.assertEquals(f.getKey(), ApiKeyInitializers.getResponse().get().getBody().jsonPath().getJsonObject(f.getKey()).toString(),
-                                    f.getValue().toString());
+                                    f.getValue().toString(),false,null);
                         } else {
                             String[] custom = f.getKey().split(":");
                             String className = custom[1];
@@ -335,7 +335,7 @@ public class ApiRequester {
 
     private void validateSchema(List<String> actual,List<String> expected){
         ApiKeyInitializers.getCustomSoftAssert().get()
-                .assertEquals("Schema validation",actual,expected);
+                .assertEquals("Schema validation",actual,expected,false,null);
     }
 
     private ApiRequester validateSchemaValue(String expectedSchemaJson){
@@ -354,7 +354,7 @@ public class ApiRequester {
                     expectedValue = ApiKeyInitializers.getGlobalVariables().get().get(expectedValue.toString().split(":")[1]);
                 }
                 ApiKeyInitializers.getCustomSoftAssert().get()
-                        .assertEquals(jsonPath,actualValue,expectedValue);
+                        .assertEquals(jsonPath,actualValue,expectedValue,false,null);
             }
         }
 
