@@ -137,7 +137,7 @@ public class SchemaTypeValidations {
     }
 
     private static void validateSchemaType(String jsonPath, boolean schemaCheck,String schemaType,String actual){
-        ApiKeyInitializers.getCustomSoftAssert().get().assertTrue(jsonPath,schemaCheck,"Schema Type("+actual+") is as expected "+schemaType, "Schema Type("+actual+") is not as expected "+schemaType);
+        ApiKeyInitializers.getCustomSoftAssert().get().assertTrue(jsonPath,schemaCheck,"Schema Type("+actual+") is as expected "+schemaType, "Schema Type("+actual+") is not as expected "+schemaType,false,null);
     }
 
 }
