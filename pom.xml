@@ -6,7 +6,7 @@
 
     <groupId>in.precisiontestautomation.scriptlessautomation</groupId>
     <artifactId>scriptlessautomation-api</artifactId>
-    <version>1.7</version>
+    <version>1.7.1</version>
 
     <name>Scriptless Automation</name>
     <description>Scriptless Automation by PrecisionTestAutomation</description>
