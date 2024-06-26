@@ -125,4 +125,18 @@ public class MOCK {
         ApiKeyInitializers.getGlobalVariables().get().put("ADDRESS",address);
         return address;
     }
+
+    public String getRandomEmailBody(String sendKeys){
+        String[] mail = sendKeys.split("\\|");
+        String[] mailData = mail[0].split("&&");
+        String name = mail[1].trim();
+        String suffix = (mailData.length > 0 && mailData[0] != null) ? mailData[0] : "";
+        String prefix = (mailData.length > 1 && mailData[1] != null) ? mailData[1] : "";
+
+        //String body = Objects.requireNonNull(GmailManager.fetchLatestEmailBodyBySubject(subject, timeRange, suffix.trim(), prefix.trim())).trim();
+        String randomMailBody = ApiKeyInitializers.getMailingServices().get().getMailBox().fetchMailUsingId().getMailBody();
+        String body = ApiFrameworkActions.getStringBetweenTwoStrings(randomMailBody,suffix,prefix);
+        ApiKeyInitializers.getGlobalVariables().get().put(name,body);
+        return body;
+    }
 }
